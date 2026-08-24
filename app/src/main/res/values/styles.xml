@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.BLLS" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">#080808</item>
+        <item name="android:colorAccent">#ff2f7f</item>
+        <item name="android:navigationBarColor">#080808</item>
+        <item name="android:statusBarColor">#0b0b0b</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
