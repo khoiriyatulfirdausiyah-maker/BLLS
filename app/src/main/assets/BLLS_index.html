@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0b">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>PayLater Game</title>
+  <style>
+    *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{
+      margin:0;min-height:100vh;padding:20px;
+      background:
+        radial-gradient(circle at 15% 15%, rgba(255,40,125,.18), transparent 20%),
+        radial-gradient(circle at 85% 85%, rgba(0,229,159,.10), transparent 22%),
+        linear-gradient(135deg,#080808,#131313,#080808);
+      color:#f5f5f5;
+    }
+    .container{width:100%;max-width:1180px;margin:0 auto}
+    .header{text-align:center;margin-bottom:25px}
+    .symbols{color:#ff2f7f;margin-bottom:8px;text-shadow:0 0 15px rgba(255,47,127,.55)}
+    .shape-row{display:flex;align-items:center;justify-content:center;gap:12px;color:inherit}
+    .shape{display:inline-block;box-sizing:border-box;flex:0 0 auto}
+    .shape.circle{width:18px;height:18px;border:2.2px solid currentColor;border-radius:50%}
+    .shape.square{width:18px;height:18px;border:2.2px solid currentColor}
+    .shape.triangle{width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid currentColor}
+    .symbols .shape-row{gap:14px}
+    h1{margin:0;font-size:34px;color:#fff}
+    .subtitle{margin-top:8px;color:#a9a9a9}
+    .layout{display:grid;grid-template-columns:360px 1fr;gap:20px}
+    .card{
+      position:relative;overflow:hidden;background:rgba(17,17,17,.97);
+      border:1px solid rgba(255,47,127,.28);border-radius:20px;padding:20px;
+      box-shadow:0 15px 35px rgba(0,0,0,.38),0 0 0 1px rgba(255,255,255,.02);
+      margin-bottom:20px
+    }
+    .card::after{
+      content:"○ △ □";position:absolute;top:13px;right:15px;
+      color:rgba(255,47,127,.12);font-size:18px;letter-spacing:5px;font-weight:bold
+    }
+    h2{margin-top:0;color:#ff438d;font-size:20px}
+    label{display:block;margin:13px 0 6px;font-size:13px;color:#dedede;font-weight:bold}
+    input,select{
+      width:100%;padding:12px;border-radius:11px;border:1px solid #333;
+      background:#0c0c0c;color:#fff;outline:none;font-size:14px;transition:.2s
+    }
+    input:focus,select:focus{border-color:#ff2f7f;box-shadow:0 0 0 3px rgba(255,47,127,.13)}
+    button{border:none;cursor:pointer;font-weight:bold}
+    .add-btn{
+      width:100%;padding:13px;margin-top:18px;border-radius:11px;
+      background:linear-gradient(135deg,#ff2f7f,#da0061);color:white;
+      box-shadow:0 8px 20px rgba(255,47,127,.22)
+    }
+    .add-btn:hover{filter:brightness(1.08)}
+    .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .summary-box{
+      background:linear-gradient(180deg,#171717,#0d0d0d);padding:17px;
+      border-radius:15px;border:1px solid rgba(0,229,159,.16)
+    }
+    .summary-box span{color:#9f9f9f;font-size:12px}
+    .summary-box strong{display:block;margin-top:8px;font-size:21px;color:#00e59f}
+    .status{margin-top:15px;padding:14px;border-radius:12px;text-align:center;font-weight:bold}
+    .safe{color:#58ffc4;background:rgba(0,229,159,.10);border:1px solid rgba(0,229,159,.25)}
+    .warning{color:#ffd35a;background:rgba(255,198,0,.10);border:1px solid rgba(255,198,0,.25)}
+    .danger{color:#ff78ab;background:rgba(255,47,127,.11);border:1px solid rgba(255,47,127,.25)}
+    .upcoming-card{
+      background:linear-gradient(135deg,rgba(255,47,127,.13),rgba(255,198,0,.08));
+      border:1px solid rgba(255,47,127,.28);border-radius:16px;padding:16px;margin-top:14px
+    }
+    .upcoming-title{font-size:13px;color:#aaa;margin-bottom:6px}
+    .upcoming-name{font-size:18px;font-weight:bold;color:#fff}
+    .upcoming-info{margin-top:9px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px}
+    .upcoming-info span{color:#aaa}
+    .upcoming-value{color:#00e59f;font-weight:bold}
+    .upcoming-danger{color:#ff5f9e;font-weight:bold}
+    .platform-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}
+    .platform-card{padding:16px;border-radius:15px;background:#0d0d0d;border:1px solid #292929;position:relative}
+    .platform-card::before{content:"●";position:absolute;top:14px;right:15px;color:#ff2f7f;font-size:10px}
+    .platform-name{font-weight:bold;color:#fff;margin-bottom:12px;font-size:16px}
+    .platform-row{display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:13px}
+    .platform-row span{color:#969696}
+    .platform-row strong{color:#00e59f;text-align:right}
+    .platform-count{margin-top:11px;color:#777;font-size:12px}
+    .empty{text-align:center;padding:22px;border-radius:13px;color:#858585;background:#0c0c0c;border:1px dashed #333}
+    .table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;min-width:900px}
+    th,td{text-align:left;padding:11px 9px;border-bottom:1px solid #252525;font-size:13px}
+    th{color:#ff5c9b;background:#161616}
+    td{color:#eaeaea}
+    tr:hover td{background:rgba(255,47,127,.025)}
+    .delete-btn{
+      padding:7px 10px;border-radius:9px;background:rgba(255,47,127,.10);
+      color:#ff6aa4;border:1px solid rgba(255,47,127,.28)
+    }
+    .delete-btn:hover{background:rgba(255,47,127,.18)}
+    .restore-btn{
+      padding:8px 11px;border-radius:9px;background:rgba(0,229,159,.09);
+      color:#58ffc4;border:1px solid rgba(0,229,159,.28)
+    }
+    .restore-btn:hover{background:rgba(0,229,159,.16)}
+    .completed-wrap{display:grid;gap:10px}
+    .completed-item{padding:13px 14px;border-radius:13px;background:#0c0c0c;border:1px solid #292929}
+    .completed-head{display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .completed-name{font-weight:bold;color:#fff}
+    .completed-meta{margin-top:5px;font-size:11px;color:#858585;line-height:1.5}
+    .completed-empty{font-size:12px;color:#777}
+    .undo-toast{
+      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9999;
+      width:min(92vw,520px);padding:12px 14px;border-radius:13px;background:#151515;
+      border:1px solid rgba(0,229,159,.35);box-shadow:0 14px 35px rgba(0,0,0,.55);
+      display:none;align-items:center;justify-content:space-between;gap:12px
+    }
+    .undo-toast.show{display:flex}
+    .undo-text{font-size:12px;color:#ddd;line-height:1.4}
+    .undo-action{padding:8px 12px;border-radius:9px;background:#00e59f;color:#07130e;white-space:nowrap}
+    .due-safe{color:#58ffc4}
+    .due-warning{color:#ffd35a;font-weight:bold}
+    .due-danger{color:#ff5798;font-weight:bold}
+    .game-note{font-size:11px;color:#6f6f6f;margin-top:13px;line-height:1.5}
+    .backup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .backup-btn{padding:12px;border-radius:11px;background:#151515;color:#fff;border:1px solid #343434;min-height:44px}
+    .backup-btn:hover{border-color:#00e59f}
+    .backup-btn.restore{border-color:rgba(255,47,127,.35);color:#ff78ab}
+    .backup-hint{font-size:11px;color:#7f7f7f;line-height:1.5;margin-top:10px}
+    .hidden-file{display:none}
+    .progress-card{margin-top:14px;padding:14px;border-radius:13px;background:#0d0d0d;border:1px solid #292929}
+    .progress-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:9px}
+    .progress-head span{font-size:12px;color:#9f9f9f}
+    .progress-head strong{font-size:13px;color:#00e59f}
+    .progress-track{height:10px;background:#1d1d1d;border-radius:999px;overflow:hidden;border:1px solid #2b2b2b}
+    .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#00e59f,#ff2f7f);border-radius:999px;transition:width .3s ease}
+    .progress-detail{margin-top:8px;font-size:11px;color:#777}
+
+    .custom-platform-wrap{display:none}
+    .custom-platform-wrap.show{display:block}
+    .group-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    .group-control-btn{
+      padding:8px 12px;border-radius:9px;background:#141414;color:#d9d9d9;
+      border:1px solid #333;font-size:12px
+    }
+    .group-control-btn:hover{border-color:#ff2f7f;color:#fff}
+    .paylater-groups{display:grid;gap:12px}
+    .paylater-group{
+      border:1px solid #292929;border-radius:15px;background:#0b0b0b;overflow:hidden
+    }
+    .paylater-group[open]{border-color:rgba(255,47,127,.32)}
+    .paylater-group > summary{
+      cursor:pointer;list-style:none;padding:15px 16px;display:flex;align-items:center;
+      justify-content:space-between;gap:14px;background:#101010;user-select:none
+    }
+    .paylater-group > summary::-webkit-details-marker{display:none}
+    .paylater-group > summary::after{
+      content:"＋";font-size:21px;line-height:1;color:#ff438d;font-weight:normal;flex:0 0 auto
+    }
+    .paylater-group[open] > summary::after{content:"−"}
+    .group-title{font-size:16px;font-weight:bold;color:#fff}
+    .group-meta{margin-top:4px;font-size:11px;color:#858585}
+    .group-total{text-align:right;flex:0 0 auto}
+    .group-total span{display:block;color:#777;font-size:10px;margin-bottom:3px}
+    .group-total strong{color:#00e59f;font-size:13px}
+    .group-body{padding:12px}
+
+
+    /* Android / APK mobile shell */
+    .mobile-appbar,.mobile-bottom-nav{display:none}
+    .mobile-page-card{min-width:0}
+
+    @media (max-width: 850px){
+      html{-webkit-text-size-adjust:100%;background:#080808}
+      body{
+        padding:0 12px calc(92px + env(safe-area-inset-bottom));
+        background:
+          radial-gradient(circle at 18% 0%,rgba(255,40,125,.16),transparent 24%),
+          linear-gradient(180deg,#090909,#111 38%,#080808);
+        -webkit-tap-highlight-color:transparent;
+        overscroll-behavior-y:contain;
+      }
+      .container{padding-top:72px}
+      .header{display:none}
+      .layout{display:block}
+      .layout>div{display:contents}
+
+      .mobile-appbar{
+        display:flex;position:fixed;z-index:50;left:0;right:0;top:0;
+        min-height:62px;padding:calc(8px + env(safe-area-inset-top)) 16px 8px;
+        align-items:center;justify-content:space-between;gap:12px;
+        background:rgba(10,10,10,.94);backdrop-filter:blur(16px);
+        border-bottom:1px solid rgba(255,255,255,.07)
+      }
+      .mobile-brand{min-width:0;display:flex;align-items:center;gap:11px}
+      .mobile-brand-mark{
+        width:39px;height:39px;border-radius:13px;display:grid;place-items:center;
+        background:linear-gradient(145deg,rgba(255,47,127,.22),rgba(255,47,127,.06));
+        border:1px solid rgba(255,47,127,.32);color:#ff438d;flex:0 0 auto
+      }
+      .mobile-brand-mark .shape-row{gap:4px}
+      .mobile-brand-mark .shape.circle,.mobile-brand-mark .shape.square{width:9px;height:9px;border-width:1.6px}
+      .mobile-brand-mark .shape.triangle{border-left-width:5px;border-right-width:5px;border-bottom-width:9px}
+      .mobile-brand-title{font-weight:800;color:#fff;font-size:16px;line-height:1.15}
+      .mobile-brand-sub{color:#777;font-size:10px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .mobile-apk-badge{
+        flex:0 0 auto;padding:6px 8px;border-radius:999px;font-size:9px;font-weight:800;
+        letter-spacing:.7px;color:#61efbc;background:rgba(0,229,159,.09);
+        border:1px solid rgba(0,229,159,.18)
+      }
+
+      .mobile-page-card{display:none}
+      body[data-mobile-page="home"] .mobile-page-card.page-home,
+      body[data-mobile-page="add"] .mobile-page-card.page-add,
+      body[data-mobile-page="debt"] .mobile-page-card.page-debt,
+      body[data-mobile-page="data"] .mobile-page-card.page-data{display:block}
+
+      .card{
+        margin:0 0 12px;padding:16px;border-radius:18px;
+        box-shadow:0 7px 22px rgba(0,0,0,.22)
+      }
+      .card::after{display:none}
+      h2{padding-right:0;margin-bottom:15px;font-size:17px}
+      label{font-size:12px;margin-top:12px}
+      input,select{border-radius:13px;min-height:48px;font-size:16px;background:#0a0a0a}
+      button{touch-action:manipulation}
+      .add-btn{min-height:50px;border-radius:14px}
+      .summary-grid{grid-template-columns:1fr 1fr;gap:9px}
+      .summary-box{padding:13px;border-radius:14px;min-width:0}
+      .summary-box span{font-size:10px;line-height:1.35;display:block}
+      .summary-box strong{font-size:18px;overflow-wrap:anywhere}
+      .platform-grid{grid-template-columns:1fr;gap:9px}
+      .platform-card{border-radius:14px}
+      .progress-card,.upcoming-card{border-radius:14px}
+      .status{font-size:12px;line-height:1.45}
+      .group-controls{position:sticky;top:72px;z-index:5;padding:7px 0;background:linear-gradient(#111 70%,transparent)}
+      .group-control-btn{min-height:40px}
+      .paylater-group{border-radius:14px}
+      .paylater-group>summary{padding:14px}
+      .group-title{font-size:14px}
+      .group-total strong{font-size:12px}
+      .completed-card{border-radius:14px}
+      .backup-btn{min-height:48px;border-radius:13px}
+      .undo-toast{bottom:calc(82px + env(safe-area-inset-bottom));left:12px;right:12px;max-width:none}
+
+      .mobile-bottom-nav{
+        display:grid;position:fixed;z-index:60;left:10px;right:10px;
+        bottom:calc(8px + env(safe-area-inset-bottom));grid-template-columns:repeat(4,1fr);
+        padding:7px;border-radius:20px;background:rgba(16,16,16,.96);
+        border:1px solid rgba(255,255,255,.09);box-shadow:0 12px 30px rgba(0,0,0,.48);
+        backdrop-filter:blur(18px)
+      }
+      .mobile-nav-btn{
+        min-width:0;min-height:55px;border-radius:14px;background:transparent;color:#777;
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+        font-size:9px;font-weight:700;padding:5px 2px
+      }
+      .mobile-nav-icon{font-size:17px;line-height:1}
+      .mobile-nav-btn.active{background:rgba(255,47,127,.12);color:#ff5c9b}
+      .mobile-nav-btn:focus-visible{outline:2px solid #ff438d;outline-offset:2px}
+    }
+
+    @media (max-width: 370px){
+      .summary-grid{grid-template-columns:1fr}
+      .mobile-brand-sub{display:none}
+      .mobile-appbar{padding-left:12px;padding-right:12px}
+    }
+
+    @media (min-width: 851px){
+      body{padding:28px}
+      .layout{grid-template-columns:minmax(320px,360px) minmax(0,1fr)}
+      .summary-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+
+    @media (max-width: 850px){
+      body{padding:12px}
+      .container{max-width:none}
+      .header{margin-bottom:18px;padding:4px 4px 0}
+      .symbols{font-size:inherit;letter-spacing:normal}
+      .symbols .shape.circle,.symbols .shape.square{width:16px;height:16px;border-width:2px}
+      .symbols .shape.triangle{border-left-width:9px;border-right-width:9px;border-bottom-width:16px}
+      h1{font-size:27px}
+      .subtitle{font-size:13px;line-height:1.45}
+      .layout{grid-template-columns:1fr;gap:0}
+      .card{padding:16px;border-radius:16px;margin-bottom:14px}
+      .card::after{font-size:14px;letter-spacing:3px;top:11px;right:10px}
+      h2{font-size:18px;padding-right:70px}
+      label{font-size:13px}
+      input,select{
+        min-height:46px;
+        font-size:16px;
+        padding:11px 12px
+      }
+      .add-btn{
+        min-height:48px;
+        font-size:15px
+      }
+      .summary-grid,.platform-grid{grid-template-columns:1fr;gap:10px}
+      .backup-grid{grid-template-columns:1fr}
+      .summary-box{padding:14px}
+      .summary-box strong{font-size:20px}
+      .upcoming-info{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:14px 10px
+      }
+
+      .table-wrap{overflow:visible}
+      table,thead,tbody,tr,th,td{display:block;width:100%}
+      table{min-width:0}
+      thead{display:none}
+      tbody{display:grid;gap:12px}
+      tr{
+        background:#0d0d0d;
+        border:1px solid #292929;
+        border-radius:14px;
+        padding:12px
+      }
+      td{
+        display:grid;
+        grid-template-columns:minmax(105px,42%) minmax(0,1fr);
+        gap:10px;
+        padding:7px 0;
+        border-bottom:1px solid #202020;
+        align-items:start;
+        word-break:break-word
+      }
+      td:last-child{border-bottom:0;padding-top:10px}
+      td::before{
+        color:#8f8f8f;
+        font-size:12px;
+        font-weight:bold
+      }
+      td:nth-child(1)::before{content:"Transaksi"}
+      td:nth-child(2)::before{content:"PayLater"}
+      td:nth-child(3)::before{content:"Cicilan/Bulan"}
+      td:nth-child(4)::before{content:"Tenor"}
+      td:nth-child(5)::before{content:"Sudah Bayar"}
+      td:nth-child(6)::before{content:"Sisa Bulan"}
+      td:nth-child(7)::before{content:"Sisa Tagihan"}
+      td:nth-child(8)::before{content:"Jatuh Tempo"}
+      td:nth-child(9)::before{content:"Status"}
+      td:nth-child(10)::before{content:"Aksi"}
+      .delete-btn,.restore-btn{min-height:42px;width:100%}
+      .completed-head{align-items:flex-start;flex-direction:column}
+    }
+
+    @media (max-width: 420px){
+      body{padding:8px}
+      .card{padding:14px}
+      .symbols .shape.circle,.symbols .shape.square{width:14px;height:14px;border-width:1.8px}
+      .symbols .shape.triangle{border-left-width:8px;border-right-width:8px;border-bottom-width:14px}
+      h1{font-size:24px}
+      .upcoming-info{grid-template-columns:1fr}
+      td{grid-template-columns:100px minmax(0,1fr)}
+    }
+
+    /* Final Android overrides: keep the APK shell above legacy responsive rules */
+    @media (max-width:850px){
+      body{padding:0 12px calc(92px + env(safe-area-inset-bottom))}
+      .container{padding-top:72px}
+      .header{display:none}
+      .layout{display:block;grid-template-columns:none;gap:0}
+      .layout>div{display:contents}
+      .mobile-appbar{display:flex}
+      .mobile-bottom-nav{display:grid}
+      .mobile-page-card{display:none}
+      body[data-mobile-page="home"] .mobile-page-card.page-home,
+      body[data-mobile-page="add"] .mobile-page-card.page-add,
+      body[data-mobile-page="debt"] .mobile-page-card.page-debt,
+      body[data-mobile-page="data"] .mobile-page-card.page-data{display:block}
+      .summary-grid{grid-template-columns:1fr 1fr;gap:9px}
+      .platform-grid{grid-template-columns:1fr;gap:9px}
+      .card{margin-bottom:12px;border-radius:18px}
+      .card::after{display:none}
+      h2{padding-right:0}
+    }
+    @media (max-width:370px){
+      body{padding-left:8px;padding-right:8px}
+      .summary-grid{grid-template-columns:1fr}
+    }
+
+  </style>
+</head>
+<body data-mobile-page="home">
+<div class="mobile-appbar" aria-label="PayLater Game">
+  <div class="mobile-brand">
+    <div class="mobile-brand-mark"><div class="shape-row" aria-hidden="true"><span class="shape circle"></span><span class="shape triangle"></span><span class="shape square"></span></div></div>
+    <div>
+      <div class="mobile-brand-title">PayLater Game</div>
+      <div class="mobile-brand-sub">Kontrol cicilanmu, jangan sampai kena Red Light.</div>
+    </div>
+  </div>
+  <div class="mobile-apk-badge">APK</div>
+</div>
+<div class="container">
+  <div class="header">
+    <div class="symbols"><div class="shape-row" aria-hidden="true"><span class="shape circle"></span><span class="shape triangle"></span><span class="shape square"></span></div></div>
+    <h1>PayLater Game</h1>
+    <div class="subtitle">Jangan sampai cicilan jadi permainan bertahan hidup.</div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card mobile-page-card page-add">
+        <h2>Penghasilan Bulanan</h2>
+        <label>Penghasilan per Bulan</label>
+        <input type="number" id="income" placeholder="Contoh: 2000000">
+        <div class="game-note">Dipakai untuk menghitung rasio cicilan terhadap penghasilan. Nilainya tersimpan otomatis.</div>
+      </div>
+
+      <div class="card mobile-page-card page-add">
+        <h2>Tambah Pemain</h2>
+
+        <label>Nama Barang / Transaksi</label>
+        <input type="text" id="name" placeholder="Contoh: HP">
+
+        <label>Platform PayLater</label>
+        <select id="platform" onchange="toggleCustomPlatform()">
+          <option>SPayLater</option>
+          <option>GoPayLater</option>
+          <option>Kredivo</option>
+          <option>Akulaku</option>
+          <option>Tokopedia PayLater</option>
+          <option>Indodana</option>
+          <option>Atome</option>
+          <option>Lainnya</option>
+        </select>
+
+        <div id="customPlatformWrap" class="custom-platform-wrap">
+          <label>Nama PayLater Lainnya</label>
+          <input type="text" id="customPlatform" placeholder="Contoh: Traveloka PayLater">
+        </div>
+
+        <label>Harga / Pokok Tagihan</label>
+        <input type="number" id="price" placeholder="Contoh: 1000000">
+
+        <label>Tenor</label>
+        <select id="tenor">
+          <option value="1">1 bulan</option>
+          <option value="3">3 bulan</option>
+          <option value="6">6 bulan</option>
+          <option value="9">9 bulan</option>
+          <option value="12">12 bulan</option>
+          <option value="18">18 bulan</option>
+          <option value="24">24 bulan</option>
+        </select>
+
+        <label>Bunga per Bulan (%)</label>
+        <input type="number" id="interest" value="0" step="0.01">
+
+        <label>Biaya Admin</label>
+        <input type="number" id="admin" value="0">
+
+        <label>Cicilan yang Sudah Dibayar</label>
+        <input type="number" id="paidMonths" value="0" min="0">
+
+        <label>Jatuh Tempo Tiap Tanggal</label>
+        <input type="number" id="dueDay" min="1" max="31" placeholder="Contoh: 5">
+
+        <button class="add-btn" onclick="addItem()">Masukkan ke Permainan</button>
+
+        <div class="game-note">
+          Total bayar dihitung dari pokok + bunga + biaya admin.
+          Jatuh tempo otomatis dihitung ke tanggal terdekat berikutnya.
+        </div>
+      </div>
+
+      <div class="card mobile-page-card page-data">
+        <h2>Data Safety</h2>
+        <div style="font-size:13px;color:#bdbdbd;line-height:1.55">Simpan salinan data PayLater supaya aman kalau file dipindah, browser direset, atau ganti HP.</div>
+        <div class="backup-grid">
+          <button class="backup-btn" onclick="exportBackup()">💾 Backup Data</button>
+          <button class="backup-btn restore" onclick="document.getElementById('backupFile').click()">↩️ Pulihkan Data</button>
+        </div>
+        <input class="hidden-file" type="file" id="backupFile" accept="application/json,.json" onchange="importBackup(event)">
+        <div class="backup-hint">Backup akan tersimpan sebagai file JSON. File itu memuat transaksi aktif, transaksi yang sudah lunas, dan penghasilan.</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card mobile-page-card page-home">
+        <h2>Game Status</h2>
+
+        <div class="summary-grid">
+          <div class="summary-box">
+            <span>Total Tagihan / Bulan</span>
+            <strong id="monthlyTotal">Rp0</strong>
+          </div>
+          <div class="summary-box">
+            <span>Total Sisa Kewajiban</span>
+            <strong id="remainingTotal">Rp0</strong>
+          </div>
+          <div class="summary-box">
+            <span>Rasio ke Penghasilan</span>
+            <strong id="ratio">0%</strong>
+          </div>
+          <div class="summary-box">
+            <span>Sudah Dibayar</span>
+            <strong id="paidPercent">0%</strong>
+          </div>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-head">
+            <span>Progress Pelunasan Semua PayLater</span>
+            <strong id="paidProgressLabel">0%</strong>
+          </div>
+          <div class="progress-track"><div id="paidProgressFill" class="progress-fill"></div></div>
+          <div id="paidDetail" class="progress-detail">Rp0 sudah dibayar dari Rp0 total kewajiban</div>
+        </div>
+
+        <div id="status" class="status safe">🟢 Belum ada pemain aktif</div>
+        <div id="upcomingDue"></div>
+      </div>
+
+      <div class="card mobile-page-card page-home">
+        <h2>PayLater Arena</h2>
+        <div id="platformSummary" class="platform-grid"></div>
+      </div>
+
+      <div class="card mobile-page-card page-debt">
+        <h2>Daftar Pemain</h2>
+        <div class="group-controls">
+          <button class="group-control-btn" onclick="setAllGroups(true)">Buka Semua</button>
+          <button class="group-control-btn" onclick="setAllGroups(false)">Tutup Semua</button>
+        </div>
+        <div id="transactionList"></div>
+      </div>
+
+      <div class="card mobile-page-card page-debt">
+        <h2>Sudah Lunas</h2>
+        <div style="font-size:12px;color:#8f8f8f;line-height:1.5;margin-bottom:12px">Transaksi yang dieliminasi dianggap sudah terbayar. Kalau salah pencet, kamu bisa mengembalikannya ke Daftar Pemain.</div>
+        <div id="completedList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<nav class="mobile-bottom-nav" aria-label="Navigasi utama">
+  <button type="button" class="mobile-nav-btn active" data-page="home" onclick="setMobilePage('home', this)"><span class="mobile-nav-icon">⌂</span><span>Ringkasan</span></button>
+  <button type="button" class="mobile-nav-btn" data-page="add" onclick="setMobilePage('add', this)"><span class="mobile-nav-icon">＋</span><span>Tambah</span></button>
+  <button type="button" class="mobile-nav-btn" data-page="debt" onclick="setMobilePage('debt', this)"><span class="mobile-nav-icon">▤</span><span>Cicilan</span></button>
+  <button type="button" class="mobile-nav-btn" data-page="data" onclick="setMobilePage('data', this)"><span class="mobile-nav-icon">◆</span><span>Data</span></button>
+</nav>
+
+<div id="undoToast" class="undo-toast">
+  <div id="undoText" class="undo-text">Transaksi ditandai lunas.</div>
+  <button class="undo-action" onclick="undoLastElimination()">Batalkan</button>
+</div>
+
+<script>
+function setMobilePage(page, button){
+  document.body.dataset.mobilePage = page;
+  document.querySelectorAll(".mobile-nav-btn").forEach(btn => btn.classList.toggle("active", btn.dataset.page === page));
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+const screenshotSeedData = [
+  {id:260824001,name:"Token Jual 50k",platform:"Kredivo",price:51950,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:17,totalPayment:51950,monthly:51950},
+  {id:260824002,name:"Moisturizer",platform:"Kredivo",price:105080,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:23,totalPayment:105080,monthly:105080},
+  {id:260824003,name:"Token Jual 50k",platform:"Kredivo",price:39720,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:23,totalPayment:39720,monthly:39720},
+  {id:260824004,name:"Bayar Tagihan Bulan Sebelumnya",platform:"Kredivo",price:387100,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:4,totalPayment:387100,monthly:387100},
+  {id:260824005,name:"Token Jualan",platform:"Kredivo",price:19720,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:7,totalPayment:19720,monthly:19720},
+  {id:260824006,name:"Token Jual",platform:"Kredivo",price:22000,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:10,totalPayment:22000,monthly:22000},
+  {id:260824007,name:"Klik IDM Ibuk",platform:"Kredivo",price:97000,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:16,totalPayment:97000,monthly:97000},
+  {id:260824008,name:"Pulpen Kantor",platform:"SPayLater",price:19493,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:19493,monthly:19493},
+  {id:260824009,name:"Galon Kantor",platform:"YUP",price:88000,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:1,totalPayment:88000,monthly:88000},
+  {id:260824010,name:"Vitalife Magnesium",platform:"YUP",price:157533,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:1,totalPayment:157533,monthly:157533},
+  {id:260824011,name:"Gestun",platform:"YUP",price:127388,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:1,totalPayment:127388,monthly:127388},
+  {id:260824012,name:"Pakan Kucing",platform:"SPayLater",price:88700,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:88700,monthly:88700},
+  {id:260824013,name:"Obat Ibuk",platform:"SPayLater",price:126904,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:126904,monthly:126904},
+  {id:260824014,name:"Pewangi Ruangan",platform:"SPayLater",price:24322,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:24322,monthly:24322},
+  {id:260824015,name:"Sunscreen Wardah",platform:"SPayLater",price:21050,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:21050,monthly:21050},
+  {id:260824016,name:"Token Jual",platform:"SPayLater",price:45935,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:45935,monthly:45935},
+  {id:260824017,name:"Paket Data 10GB",platform:"SPayLater",price:40000,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:40000,monthly:40000},
+  {id:260824018,name:"Kaos Kaki 2 Pasang",platform:"SPayLater",price:12821,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:12821,monthly:12821},
+  {id:260824019,name:"Pakan Kucing",platform:"SPayLater",price:88000,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:88000,monthly:88000},
+  {id:260824020,name:"Parfum Holigrails",platform:"SPayLater",price:54258,tenor:3,interest:0,admin:0,paidMonths:1,dueDay:5,totalPayment:54258,monthly:18086},
+  {id:260824021,name:"Buku 2",platform:"SPayLater",price:52232.4,tenor:6,interest:0,admin:0,paidMonths:1,dueDay:5,totalPayment:52232.4,monthly:8705.4},
+  {id:260824022,name:"Pampers Mbah",platform:"SPayLater",price:134050,tenor:1,interest:0,admin:0,paidMonths:0,dueDay:5,totalPayment:134050,monthly:134050},
+  {id:260824023,name:"Lulur",platform:"SPayLater",price:36264,tenor:3,interest:0,admin:0,paidMonths:2,dueDay:5,totalPayment:36264,monthly:12088},
+  {id:260824024,name:"Buku",platform:"SPayLater",price:62466,tenor:3,interest:0,admin:0,paidMonths:1,dueDay:5,totalPayment:62466,monthly:20822}
+];
+
+let items = [];
+let eliminatedItems = [];
+
+const storedData = localStorage.getItem("paylaterGameData");
+const storedEliminatedData = localStorage.getItem("paylaterGameEliminated");
+const dataInitialized = localStorage.getItem("paylaterGameInitialized") === "1";
+
+try{
+  const parsed = storedData === null ? [] : JSON.parse(storedData);
+  items = Array.isArray(parsed) ? parsed : [];
+}catch(e){
+  items = [];
+}
+
+try{
+  const parsedEliminated = storedEliminatedData === null ? [] : JSON.parse(storedEliminatedData);
+  eliminatedItems = Array.isArray(parsedEliminated) ? parsedEliminated : [];
+}catch(e){
+  eliminatedItems = [];
+}
+
+/*
+  First-launch safety:
+  - Browser/perangkat baru kadang punya localStorage kosong atau [].
+  - Kalau belum pernah diinisialisasi DAN aktif+lunas sama-sama kosong, masukkan 24 data awal.
+  - Setelah aplikasi pernah dipakai, penanda ini mencegah data awal muncul lagi secara tidak sengaja.
+  - Kalau semua transaksi sudah dilunasi, eliminatedItems tetap berisi riwayat sehingga data awal juga tidak muncul kembali.
+*/
+if(!dataInitialized && items.length === 0 && eliminatedItems.length === 0){
+  items = screenshotSeedData.map(item => ({...item}));
+}
+
+// Migrasi data lama: transaksi yang sebelumnya berlabel "Lainnya" adalah YUP.
+items = items.map(item => item.platform === "Lainnya" ? {...item, platform:"YUP"} : item);
+eliminatedItems = eliminatedItems.map(item => item.platform === "Lainnya" ? {...item, platform:"YUP"} : item);
+
+localStorage.setItem("paylaterGameData", JSON.stringify(items));
+localStorage.setItem("paylaterGameEliminated", JSON.stringify(eliminatedItems));
+localStorage.setItem("paylaterGameInitialized", "1");
+let lastEliminatedId = null;
+let undoTimer = null;
+
+const incomeInput = document.getElementById("income");
+incomeInput.value = localStorage.getItem("paylaterGameIncome") || "";
+
+incomeInput.addEventListener("input", function(){
+  localStorage.setItem("paylaterGameIncome", this.value);
+  render();
+});
+
+function rupiah(number){
+  return "Rp" + Math.round(number).toLocaleString("id-ID");
+}
+
+
+function toggleCustomPlatform(){
+  const isOther = document.getElementById("platform").value === "Lainnya";
+  const wrap = document.getElementById("customPlatformWrap");
+  wrap.classList.toggle("show", isOther);
+  if(isOther){
+    setTimeout(() => document.getElementById("customPlatform").focus(), 0);
+  }
+}
+
+function setAllGroups(open){
+  document.querySelectorAll(".paylater-group").forEach(group => {
+    group.open = open;
+  });
+}
+
+function addItem(){
+  const name = document.getElementById("name").value.trim();
+  const platformChoice = document.getElementById("platform").value;
+  const customPlatform = document.getElementById("customPlatform").value.trim();
+  const platform = platformChoice === "Lainnya" ? customPlatform : platformChoice;
+  const price = Number(document.getElementById("price").value);
+  const tenor = Number(document.getElementById("tenor").value);
+  const interest = Number(document.getElementById("interest").value);
+  const admin = Number(document.getElementById("admin").value);
+  let paidMonths = Number(document.getElementById("paidMonths").value);
+  const dueDay = Number(document.getElementById("dueDay").value);
+
+  if(!name || price <= 0 || dueDay < 1 || dueDay > 31){
+    alert("Nama transaksi, harga, dan tanggal jatuh tempo harus diisi dengan benar.");
+    return;
+  }
+
+  if(platformChoice === "Lainnya" && !customPlatform){
+    alert("Isi nama PayLater lainnya terlebih dahulu.");
+    document.getElementById("customPlatform").focus();
+    return;
+  }
+
+  if(paidMonths < 0) paidMonths = 0;
+  if(paidMonths > tenor) paidMonths = tenor;
+
+  const totalInterest = price * (interest / 100) * tenor;
+  const totalPayment = price + totalInterest + admin;
+  const monthly = totalPayment / tenor;
+
+  items.push({
+    id: Date.now(),
+    name,
+    platform,
+    price,
+    tenor,
+    interest,
+    admin,
+    paidMonths,
+    dueDay,
+    totalPayment,
+    monthly
+  });
+
+  save();
+  clearForm();
+  render();
+}
+
+function clearForm(){
+  document.getElementById("name").value = "";
+  document.getElementById("customPlatform").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("interest").value = 0;
+  document.getElementById("admin").value = 0;
+  document.getElementById("paidMonths").value = 0;
+  document.getElementById("dueDay").value = "";
+}
+
+function deleteItem(id){
+  const index = items.findIndex(item => item.id === id);
+  if(index < 0) return;
+
+  const item = items[index];
+  const archived = {
+    ...item,
+    originalPaidMonths: Number(item.paidMonths) || 0,
+    paidMonths: Number(item.tenor) || Number(item.paidMonths) || 0,
+    eliminatedAt: new Date().toISOString()
+  };
+
+  eliminatedItems.unshift(archived);
+  items.splice(index, 1);
+  lastEliminatedId = archived.id;
+  save();
+  render();
+  showUndoToast(`${item.name} ditandai sudah lunas.`);
+}
+
+function restoreItem(id){
+  const index = eliminatedItems.findIndex(item => item.id === id);
+  if(index < 0) return;
+
+  const archived = eliminatedItems[index];
+  const restored = {...archived};
+  restored.paidMonths = Number.isFinite(Number(restored.originalPaidMonths)) ? Number(restored.originalPaidMonths) : 0;
+  delete restored.originalPaidMonths;
+  delete restored.eliminatedAt;
+
+  eliminatedItems.splice(index, 1);
+  items.push(restored);
+  if(lastEliminatedId === id) lastEliminatedId = null;
+  save();
+  render();
+  hideUndoToast();
+}
+
+function undoLastElimination(){
+  if(lastEliminatedId !== null) restoreItem(lastEliminatedId);
+}
+
+function showUndoToast(message){
+  const toast = document.getElementById("undoToast");
+  document.getElementById("undoText").textContent = message;
+  toast.classList.add("show");
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndoToast, 7000);
+}
+
+function hideUndoToast(){
+  const toast = document.getElementById("undoToast");
+  if(toast) toast.classList.remove("show");
+  clearTimeout(undoTimer);
+}
+
+function save(){
+  localStorage.setItem("paylaterGameData", JSON.stringify(items));
+  localStorage.setItem("paylaterGameEliminated", JSON.stringify(eliminatedItems));
+  localStorage.setItem("paylaterGameInitialized", "1");
+}
+
+function calculateRemaining(item){
+  const remainingMonths = Math.max(item.tenor - item.paidMonths, 0);
+  return item.monthly * remainingMonths;
+}
+
+function getDueInfo(dueDay){
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  let year = today.getFullYear();
+  let month = today.getMonth();
+
+  const lastDayThisMonth = new Date(year, month + 1, 0).getDate();
+  const safeDueDay = Math.min(dueDay, lastDayThisMonth);
+
+  let dueDate = new Date(year, month, safeDueDay);
+
+  if(dueDate < today){
+    month++;
+    if(month > 11){
+      month = 0;
+      year++;
+    }
+
+    const lastDayNextMonth = new Date(year, month + 1, 0).getDate();
+    dueDate = new Date(year, month, Math.min(dueDay, lastDayNextMonth));
+  }
+
+  const diffTime = dueDate.getTime() - today.getTime();
+  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  const formattedDate = dueDate.toLocaleDateString("id-ID", {
+    day:"numeric",
+    month:"long",
+    year:"numeric"
+  });
+
+  let statusText = "";
+  let statusClass = "";
+
+  if(daysLeft === 0){
+    statusText = "🔴 Jatuh tempo hari ini";
+    statusClass = "due-danger";
+  } else if(daysLeft <= 3){
+    statusText = "🟡 H-" + daysLeft;
+    statusClass = "due-warning";
+  } else {
+    statusText = "🟢 " + daysLeft + " hari lagi";
+    statusClass = "due-safe";
+  }
+
+  return {date: formattedDate, daysLeft, statusText, statusClass};
+}
+
+function render(){
+  let monthlyTotal = 0;
+  let remainingTotal = 0;
+  let totalObligation = 0;
+  let totalPaid = 0;
+
+  items.forEach(item => {
+    const tenor = Math.max(Number(item.tenor) || 0, 0);
+    const paidMonths = Math.min(Math.max(Number(item.paidMonths) || 0, 0), tenor);
+    const monthly = Number(item.monthly) || 0;
+    const remainingMonths = Math.max(tenor - paidMonths, 0);
+
+    if(remainingMonths > 0){
+      monthlyTotal += monthly;
+      remainingTotal += monthly * remainingMonths;
+    }
+
+    const obligation = Number(item.totalPayment) || (monthly * tenor);
+    totalObligation += obligation;
+    totalPaid += Math.min(monthly * paidMonths, obligation);
+  });
+
+  eliminatedItems.forEach(item => {
+    const tenor = Math.max(Number(item.tenor) || 0, 0);
+    const monthly = Number(item.monthly) || 0;
+    const obligation = Number(item.totalPayment) || (monthly * tenor);
+    totalObligation += obligation;
+    totalPaid += obligation;
+  });
+
+  document.getElementById("monthlyTotal").textContent = rupiah(monthlyTotal);
+  document.getElementById("remainingTotal").textContent = rupiah(remainingTotal);
+
+  const income = Number(incomeInput.value) || 0;
+  const ratio = income > 0 ? monthlyTotal / income * 100 : 0;
+  const paidPercent = totalObligation > 0 ? Math.min((totalPaid / totalObligation) * 100, 100) : 0;
+
+  document.getElementById("ratio").textContent = ratio.toFixed(1) + "%";
+  document.getElementById("paidPercent").textContent = paidPercent.toFixed(1) + "%";
+  document.getElementById("paidProgressLabel").textContent = paidPercent.toFixed(1) + "%";
+  document.getElementById("paidProgressFill").style.width = paidPercent + "%";
+  document.getElementById("paidDetail").textContent = `${rupiah(totalPaid)} sudah dibayar dari ${rupiah(totalObligation)} total kewajiban`;
+
+  updateStatus(ratio);
+  renderUpcomingDue();
+  renderPlatforms();
+  renderTransactions();
+  renderCompleted();
+}
+
+function updateStatus(ratio){
+  const status = document.getElementById("status");
+  const activeItems = items.filter(item => item.tenor - item.paidMonths > 0);
+
+  if(activeItems.length === 0){
+    status.className = "status safe";
+    status.textContent = "🟢 Tidak ada cicilan aktif";
+  } else if(ratio <= 20){
+    status.className = "status safe";
+    status.textContent = "🟢 GREEN LIGHT — cicilan masih ringan";
+  } else if(ratio <= 35){
+    status.className = "status warning";
+    status.textContent = "🟡 WARNING — cicilan mulai memakan penghasilan";
+  } else {
+    status.className = "status danger";
+    status.textContent = "🔴 RED LIGHT — cicilan sudah cukup berat";
+  }
+}
+
+function renderUpcomingDue(){
+  const container = document.getElementById("upcomingDue");
+
+  const activeItems = items
+    .filter(item => item.tenor - item.paidMonths > 0)
+    .map(item => ({...item, due: getDueInfo(item.dueDay || 1)}))
+    .sort((a,b) => a.due.daysLeft - b.due.daysLeft);
+
+  if(activeItems.length === 0){
+    container.innerHTML = "";
+    return;
+  }
+
+  const item = activeItems[0];
+
+  container.innerHTML = `
+    <div class="upcoming-card">
+      <div class="upcoming-title">⚠️ Jatuh Tempo Terdekat</div>
+      <div class="upcoming-name">${item.name}</div>
+
+      <div class="upcoming-info">
+        <div>
+          <span>PayLater</span><br>
+          <strong>${item.platform}</strong>
+        </div>
+
+        <div>
+          <span>Tagihan</span><br>
+          <strong class="upcoming-value">${rupiah(item.monthly)}</strong>
+        </div>
+
+        <div>
+          <span>Jatuh Tempo</span><br>
+          <strong>${item.due.date}</strong>
+        </div>
+
+        <div>
+          <span>Status</span><br>
+          <strong class="${item.due.daysLeft <= 3 ? "upcoming-danger" : "upcoming-value"}">
+            ${item.due.statusText}
+          </strong>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPlatforms(){
+  const platformData = {};
+
+  items.forEach(item => {
+    const remainingMonths = item.tenor - item.paidMonths;
+    if(remainingMonths <= 0) return;
+
+    if(!platformData[item.platform]){
+      platformData[item.platform] = {monthly:0, remaining:0, count:0};
+    }
+
+    platformData[item.platform].monthly += item.monthly;
+    platformData[item.platform].remaining += calculateRemaining(item);
+    platformData[item.platform].count++;
+  });
+
+  const container = document.getElementById("platformSummary");
+  const platforms = Object.entries(platformData);
+
+  if(platforms.length === 0){
+    container.innerHTML = `<div class="empty">Belum ada PayLater aktif.</div>`;
+    return;
+  }
+
+  platforms.sort((a,b) => b[1].monthly - a[1].monthly);
+
+  container.innerHTML = platforms.map(([platform,data]) => `
+    <div class="platform-card">
+      <div class="platform-name">○ ${platform}</div>
+
+      <div class="platform-row">
+        <span>Tagihan / bulan</span>
+        <strong>${rupiah(data.monthly)}</strong>
+      </div>
+
+      <div class="platform-row">
+        <span>Total sisa</span>
+        <strong>${rupiah(data.remaining)}</strong>
+      </div>
+
+      <div class="platform-count">${data.count} transaksi aktif</div>
+    </div>
+  `).join("");
+}
+
+function renderTransactions(){
+  const container = document.getElementById("transactionList");
+
+  if(items.length === 0){
+    container.innerHTML = `<div class="empty">Belum ada transaksi yang masuk permainan.</div>`;
+    return;
+  }
+
+  const grouped = {};
+  items.forEach(item => {
+    const platformName = item.platform || "Lainnya";
+    if(!grouped[platformName]) grouped[platformName] = [];
+    grouped[platformName].push(item);
+  });
+
+  const groups = Object.entries(grouped).sort((a,b) => {
+    const aActive = a[1].reduce((sum,item) => sum + (Math.max(item.tenor-item.paidMonths,0) > 0 ? item.monthly : 0), 0);
+    const bActive = b[1].reduce((sum,item) => sum + (Math.max(item.tenor-item.paidMonths,0) > 0 ? item.monthly : 0), 0);
+    return bActive - aActive || a[0].localeCompare(b[0], "id");
+  });
+
+  container.innerHTML = `<div class="paylater-groups">${groups.map(([platform, groupItems]) => {
+    const activeItems = groupItems.filter(item => Math.max(item.tenor - item.paidMonths, 0) > 0);
+    const monthly = activeItems.reduce((sum,item) => sum + item.monthly, 0);
+    const remaining = activeItems.reduce((sum,item) => sum + calculateRemaining(item), 0);
+
+    let rows = groupItems.map(item => {
+      const remainingMonths = Math.max(item.tenor - item.paidMonths, 0);
+      const remainingItem = calculateRemaining(item);
+      const due = getDueInfo(item.dueDay || 1);
+      return `
+        <tr>
+          <td><strong>${item.name}</strong></td>
+          <td>${item.platform}</td>
+          <td>${rupiah(item.monthly)}</td>
+          <td>${item.tenor} bln</td>
+          <td>${item.paidMonths}x</td>
+          <td>${remainingMonths} bln</td>
+          <td>${rupiah(remainingItem)}</td>
+          <td>${due.date}</td>
+          <td class="${due.statusClass}">${due.statusText}</td>
+          <td><button class="delete-btn" onclick="deleteItem(${item.id})">Eliminasi</button></td>
+        </tr>`;
+    }).join("");
+
+    return `
+      <details class="paylater-group">
+        <summary>
+          <div>
+            <div class="group-title">○ ${platform}</div>
+            <div class="group-meta">${groupItems.length} transaksi • ${activeItems.length} aktif</div>
+          </div>
+          <div class="group-total">
+            <span>Tagihan / bulan</span>
+            <strong>${rupiah(monthly)}</strong>
+          </div>
+        </summary>
+        <div class="group-body">
+          <div class="platform-row" style="margin:0 0 12px;padding:0 2px">
+            <span>Total sisa aktif</span>
+            <strong>${rupiah(remaining)}</strong>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Transaksi</th>
+                  <th>PayLater</th>
+                  <th>Cicilan/Bulan</th>
+                  <th>Tenor</th>
+                  <th>Sudah Bayar</th>
+                  <th>Sisa Bulan</th>
+                  <th>Sisa Tagihan</th>
+                  <th>Jatuh Tempo</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </details>`;
+  }).join("")}</div>`;
+}
+
+function renderCompleted(){
+  const container = document.getElementById("completedList");
+  if(!container) return;
+
+  if(eliminatedItems.length === 0){
+    container.innerHTML = `<div class="empty">Belum ada transaksi yang ditandai lunas.</div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="completed-wrap">${eliminatedItems.map(item => {
+    const eliminatedDate = item.eliminatedAt ? new Date(item.eliminatedAt).toLocaleDateString("id-ID", {day:"numeric",month:"long",year:"numeric"}) : "";
+    const total = Number(item.totalPayment) || ((Number(item.monthly)||0) * (Number(item.tenor)||0));
+    return `
+      <div class="completed-item">
+        <div class="completed-head">
+          <div>
+            <div class="completed-name">✓ ${item.name}</div>
+            <div class="completed-meta">${item.platform || "Lainnya"} • ${rupiah(total)}${eliminatedDate ? ` • Dilunasi ${eliminatedDate}` : ""}</div>
+          </div>
+          <button class="restore-btn" onclick="restoreItem(${item.id})">↩ Kembalikan</button>
+        </div>
+      </div>`;
+  }).join("")}</div>`;
+}
+
+function exportBackup(){
+  const backup = {
+    app: "PayLater Game",
+    version: 7,
+    exportedAt: new Date().toISOString(),
+    income: incomeInput.value || "",
+    items,
+    eliminatedItems
+  };
+
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `paylater-game-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function importBackup(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(){
+    try{
+      const backup = JSON.parse(reader.result);
+      if(!backup || !Array.isArray(backup.items)){
+        throw new Error("Format backup tidak dikenali");
+      }
+
+      if(!confirm(`Pulihkan ${backup.items.length} transaksi dari file backup? Data yang sedang tampil akan diganti.`)){
+        event.target.value = "";
+        return;
+      }
+
+      items = backup.items.map(item => item.platform === "Lainnya" ? {...item, platform:"YUP"} : item);
+      eliminatedItems = (Array.isArray(backup.eliminatedItems) ? backup.eliminatedItems : [])
+        .map(item => item.platform === "Lainnya" ? {...item, platform:"YUP"} : item);
+      save();
+
+      if(backup.income !== undefined){
+        incomeInput.value = backup.income;
+        localStorage.setItem("paylaterGameIncome", backup.income);
+      }
+
+      render();
+      alert("Data berhasil dipulihkan ✅");
+    }catch(err){
+      alert("Backup tidak bisa dibaca. Pastikan file JSON berasal dari PayLater Game.");
+    }
+    event.target.value = "";
+  };
+  reader.readAsText(file);
+}
+
+toggleCustomPlatform();
+render();
+</script>
+</body>
+</html>
