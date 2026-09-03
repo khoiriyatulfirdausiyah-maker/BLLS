@@ -204,8 +204,13 @@ label{display:block;font-size:12px;font-weight:700;color:#ddd;margin:11px 0 6px}
             <input class="hidden" type="file" id="backupFile" accept=".json,application/json" onchange="importBackup(event)">
           </div>
           <div class="setting">
-            <strong>Data Demo</strong><div class="muted" style="margin-top:4px">Tidak lagi muncul otomatis. Isi hanya kalau ingin mencoba tampilan.</div>
-            <div class="actions"><button class="ghost" onclick="loadDemo()">Isi Data Demo</button></div>
+            <strong>Data Demo</strong>
+            <div class="muted" style="margin-top:4px">Data contoh tidak muncul otomatis dan bisa dihapus lagi tanpa mengganggu data pribadimu.</div>
+            <div class="actions">
+              <button class="ghost" onclick="loadDemo()">Isi Data Demo</button>
+              <button class="dangerbtn" id="removeDemoBtn" onclick="removeDemo()">Hapus Data Demo</button>
+            </div>
+            <div class="muted" id="demoStatus" style="margin-top:7px">Belum ada data demo.</div>
           </div>
           <div class="setting">
             <strong>Reset Data</strong><div class="muted" style="margin-top:4px">Menghapus seluruh cicilan aktif, riwayat, dan penghasilan dari perangkat ini.</div>
@@ -428,28 +433,81 @@ function restoreItem(id){const i=data.completed.findIndex(x=>x.id===id);if(i<0)r
 
 function exportBackup(){
  const backup={app:'BLLS',version:4,exportedAt:new Date().toISOString(),...data};
- const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download=`BLLS-backup-${todayISO()}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)
+ const text=JSON.stringify(backup,null,2);
+ const filename=`BLLS-backup-${todayISO()}.json`;
+
+ // APK Android native: simpan lewat bridge agar berfungsi di WebView.
+ if(window.Android && typeof Android.saveJson==='function'){
+   Android.saveJson(text,filename);
+   return;
+ }
+
+ // Browser biasa: fallback download Blob.
+ const blob=new Blob([text],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function importBackup(e){
  const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const b=JSON.parse(r.result);if(!b||!Array.isArray(b.items))throw 0;if(!confirm(`Pulihkan ${b.items.length} cicilan aktif dari backup? Data sekarang akan diganti.`))return;
  data={...blank,...b,items:b.items.map(normalizeItem),completed:(b.completed||b.eliminatedItems||[]).map(normalizeItem),income:String(b.income??'')};save();renderAll();syncSettings();toast('Backup berhasil dipulihkan.')}catch(_){alert('File backup tidak valid untuk BLLS.')}e.target.value=''};r.readAsText(f)
 }
+function demoSignatures(){
+ return [
+   {name:'Pakan Kucing',platform:'SPayLater',price:180000,tenor:3,dueDay:5},
+   {name:'Buku',platform:'SPayLater',price:120000,tenor:6,dueDay:5},
+   {name:'Token Jualan',platform:'Kredivo',price:250000,tenor:1,dueDay:17}
+ ];
+}
+function looksLikeLegacyDemo(x){
+ return demoSignatures().some(d =>
+   String(x.name||'')===d.name &&
+   String(x.platform||'')===d.platform &&
+   Number(x.price||0)===d.price &&
+   Number(x.tenor||0)===d.tenor &&
+   Number(x.dueDay||0)===d.dueDay
+ );
+}
+function getDemoItems(){
+ return data.items.filter(x=>x.isDemo===true || looksLikeLegacyDemo(x));
+}
+function updateDemoStatus(){
+ const count=getDemoItems().length;
+ const el=document.getElementById('demoStatus');
+ const btn=document.getElementById('removeDemoBtn');
+ if(el) el.textContent=count?`${count} data demo sedang aktif.`:'Belum ada data demo.';
+ if(btn) btn.disabled=count===0;
+}
 function loadDemo(){
- if((data.items.length||data.completed.length)&&!confirm('Tambahkan data demo ke data yang sudah ada?'))return;
- const base=new Date();base.setDate(5);const f=base.toISOString().slice(0,10);
+ const existing=getDemoItems();
+ if(existing.length){
+   alert('Data demo sudah ada. Hapus data demo lama dulu jika ingin mengisinya ulang.');
+   return;
+ }
+ const base=new Date();base.setDate(5);
+ const f=base.toISOString().slice(0,10);
+ const due17=new Date(base.getFullYear(),base.getMonth(),17);
  const demo=[
   {name:'Pakan Kucing',platform:'SPayLater',price:180000,tenor:3,paidMonths:1,dueDay:5,firstDueDate:f},
   {name:'Buku',platform:'SPayLater',price:120000,tenor:6,paidMonths:2,dueDay:5,firstDueDate:f},
-  {name:'Token Jualan',platform:'Kredivo',price:250000,tenor:1,paidMonths:0,dueDay:17,firstDueDate:new Date(base.getFullYear(),base.getMonth(),17).toISOString().slice(0,10)}
- ].map(x=>normalizeItem({id:uid(),interest:0,admin:0,startDate:todayISO(),...x}));
- data.items.push(...demo);save();renderAll();toast('Data demo ditambahkan.');
+  {name:'Token Jualan',platform:'Kredivo',price:250000,tenor:1,paidMonths:0,dueDay:17,firstDueDate:due17.toISOString().slice(0,10)}
+ ].map(x=>normalizeItem({id:uid(),interest:0,admin:0,startDate:todayISO(),isDemo:true,...x}));
+ data.items.push(...demo);save();renderAll();updateDemoStatus();toast('Data demo ditambahkan.');
+}
+function removeDemo(){
+ const demo=getDemoItems();
+ if(!demo.length){toast('Tidak ada data demo untuk dihapus.');return}
+ if(!confirm(`Hapus ${demo.length} data demo? Data cicilan pribadimu tidak akan dihapus.`))return;
+ const ids=new Set(demo.map(x=>x.id));
+ data.items=data.items.filter(x=>!ids.has(x.id));
+ // Untuk berjaga-jaga jika data demo pernah ditandai lunas.
+ data.completed=data.completed.filter(x=>!(x.isDemo===true || looksLikeLegacyDemo(x)));
+ save();renderAll();updateDemoStatus();toast('Data demo berhasil dihapus.');
 }
 function resetAll(){
  if(!confirm('Hapus SEMUA data BLLS di perangkat ini?'))return;
  data={...blank};save();syncSettings();renderAll();toast('Semua data BLLS dihapus.');
 }
-function renderAll(){renderHome();renderDebts();renderHistory();document.getElementById('income').value=data.income||'';applyPrivacy()}
+function renderAll(){renderHome();renderDebts();renderHistory();document.getElementById('income').value=data.income||'';applyPrivacy();updateDemoStatus()}
 resetForm();syncSettings();renderAll();
 </script>
 </body>
