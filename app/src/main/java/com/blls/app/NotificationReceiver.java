@@ -27,7 +27,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, NotificationScheduler.channelId())
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentTitle(title == null ? "BLLS" : title)
                 .setContentText(text == null ? "Ada cicilan yang mendekati jatuh tempo." : text)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
