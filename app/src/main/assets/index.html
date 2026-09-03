@@ -97,6 +97,19 @@ label{display:block;font-size:12px;font-weight:700;color:#ddd;margin:11px 0 6px}
  .brand small{max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.top-actions .iconbtn:first-child{display:none}
 }
 @media(max-width:380px){.summary{grid-template-columns:1fr}.due-grid{grid-template-columns:1fr}.brand small{display:none}.future-row{grid-template-columns:72px 1fr;}.future-row strong{grid-column:2}}
+
+.cost-details{margin-top:10px;border:1px solid #282828;border-radius:13px;background:#0a0a0a;overflow:hidden}
+.cost-details>summary{cursor:pointer;list-style:none;padding:10px 12px;font-size:11px;font-weight:800;color:#c9c9c9}
+.cost-details>summary::-webkit-details-marker{display:none}
+.cost-body{padding:0 12px 12px}
+.cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cost-box{border:1px solid #232323;border-radius:11px;padding:9px;background:#0d0d0d}
+.cost-box span{display:block;color:#858585;font-size:9px}.cost-box strong{display:block;margin-top:4px;font-size:11px}
+.payment-list{display:grid;gap:7px;margin-top:10px}
+.payment-row{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid #222;padding-top:7px;font-size:10px}
+.payment-row span{color:#898989}.payment-row strong{font-size:10px;color:#67f4c4;text-align:right}
+.notice-note{margin-top:8px;padding:9px 10px;border-radius:10px;background:rgba(255,211,90,.06);border:1px solid rgba(255,211,90,.16);font-size:10px;color:#c8b66f;line-height:1.45}
+
 </style>
 </head>
 <body>
@@ -199,6 +212,13 @@ label{display:block;font-size:12px;font-weight:700;color:#ddd;margin:11px 0 6px}
             <div class="setting-head"><div><strong>Sembunyikan nominal</strong><div class="muted">Blur angka uang di layar.</div></div><button id="privacySwitch" class="switch" onclick="togglePrivacy()"><i></i></button></div>
           </div>
           <div class="setting">
+            <div class="setting-head">
+              <div><strong>Notifikasi jatuh tempo</strong><div class="muted">Pengingat Android pada H-3, H-1, dan hari H.</div></div>
+              <button id="notificationSwitch" class="switch" onclick="toggleNotifications()"><i></i></button>
+            </div>
+            <div class="notice-note">Android akan meminta izin notifikasi. Jadwal diperbarui otomatis setiap kali data cicilan berubah.</div>
+          </div>
+          <div class="setting">
             <strong>Backup & Pulihkan</strong><div class="muted" style="margin-top:4px">Simpan seluruh data BLLS dalam JSON.</div>
             <div class="actions"><button class="secondary" onclick="exportBackup()">Backup JSON</button><button class="ghost" onclick="document.getElementById('backupFile').click()">Import JSON</button></div>
             <input class="hidden" type="file" id="backupFile" accept=".json,application/json" onchange="importBackup(event)">
@@ -216,7 +236,7 @@ label{display:block;font-size:12px;font-weight:700;color:#ddd;margin:11px 0 6px}
             <strong>Reset Data</strong><div class="muted" style="margin-top:4px">Menghapus seluruh cicilan aktif, riwayat, dan penghasilan dari perangkat ini.</div>
             <div class="actions"><button class="dangerbtn" onclick="resetAll()">Hapus Semua Data</button></div>
           </div>
-          <div class="setting"><strong>Tentang BLLS</strong><div class="muted" style="margin-top:5px">BLLS • PayLater & Cicilan Tracker<br>Versi 4 — dashboard bulanan, bayar 1x, edit, jadwal 6 bulan, dan backup JSON.</div></div>
+          <div class="setting"><strong>Tentang BLLS</strong><div class="muted" style="margin-top:5px">BLLS • PayLater & Cicilan Tracker<br>Versi 4.2 — notifikasi jatuh tempo, riwayat pembayaran, rincian bunga/biaya, dan backup JSON.</div></div>
         </div>
       </div>
     </section>
@@ -235,7 +255,7 @@ label{display:block;font-size:12px;font-weight:700;color:#ddd;margin:11px 0 6px}
 
 <script>
 const KEY='bllsDataV4', OLD_ACTIVE='paylaterGameData', OLD_DONE='paylaterGameEliminated', OLD_INCOME='paylaterGameIncome';
-const blank={version:4,items:[],completed:[],income:'',privacy:false};
+const blank={version:4.2,items:[],completed:[],income:'',privacy:false,notifications:true};
 let data=loadData();
 
 function uid(){return Date.now()+Math.floor(Math.random()*1000)}
@@ -259,8 +279,14 @@ function normalizeItem(x){
  }
  if(!dueDay) dueDay=Number(first.slice(8,10))||1;
  const total=calcTotal({...x,tenor});
+ const paymentHistory=Array.isArray(x.paymentHistory)?x.paymentHistory.map((p,i)=>({
+   id:Number(p.id)||uid()+i,
+   date:p.date||todayISO(),
+   amount:Number(p.amount)||Number(x.monthly)||total/tenor,
+   installment:Number(p.installment)||0
+ })):[];
  return {...x,id:Number(x.id)||uid(),name:x.name||'Cicilan',platform:x.platform==='Lainnya'?'YUP':(x.platform||'Lainnya'),
-   tenor,paidMonths:paid,dueDay,startDate:x.startDate||todayISO(),firstDueDate:first,totalPayment:total,monthly:Number(x.monthly)||total/tenor};
+   tenor,paidMonths:paid,dueDay,startDate:x.startDate||todayISO(),firstDueDate:first,totalPayment:total,monthly:Number(x.monthly)||total/tenor,paymentHistory};
 }
 function loadData(){
  try{
@@ -275,7 +301,7 @@ function loadData(){
  localStorage.setItem(KEY,JSON.stringify(migrated));
  return migrated;
 }
-function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));syncNativeNotifications()}
 function go(id,btn){
  document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));
  document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('active',x.dataset.page===id));
@@ -289,7 +315,49 @@ function applyPrivacy(){
  document.getElementById('privacySwitch')?.classList.toggle('on',!!data.privacy);
  document.getElementById('privacyBtn').textContent=data.privacy?'◌':'◉';
 }
-function syncSettings(){document.getElementById('income').value=data.income||'';applyPrivacy()}
+function toggleNotifications(){
+ data.notifications=!data.notifications;
+ save();
+ applyNotificationSetting();
+ toast(data.notifications?'Notifikasi jatuh tempo aktif.':'Notifikasi jatuh tempo dimatikan.');
+}
+function applyNotificationSetting(){
+ document.getElementById('notificationSwitch')?.classList.toggle('on',data.notifications!==false);
+}
+function simpleHash(str){
+ let h=0;for(let i=0;i<str.length;i++)h=((h<<5)-h)+str.charCodeAt(i),h|=0;
+ return Math.abs(h)||1;
+}
+function syncNativeNotifications(){
+ if(!(window.Android&&typeof Android.syncDueNotifications==='function'))return;
+ const notifications=[];
+ if(data.notifications!==false){
+   const now=Date.now();
+   activeItems().forEach(item=>{
+     const paid=Number(item.paidMonths)||0,tenor=Number(item.tenor)||0;
+     for(let i=paid;i<tenor;i++){
+       const due=dueDateForInstallment(item,i);
+       [3,1,0].forEach(offset=>{
+         const d=new Date(due);d.setDate(d.getDate()-offset);d.setHours(9,0,0,0);
+         const at=d.getTime();
+         if(at<=now)return;
+         const label=offset===0?'jatuh tempo hari ini':`jatuh tempo H-${offset}`;
+         notifications.push({
+           requestCode:simpleHash(`${item.id}-${i}-${offset}`),
+           at,
+           title:'BLLS • Pengingat Cicilan',
+           text:`${item.name} • ${item.platform} • ${label} • ${rp(monthly(item))}`
+         });
+       });
+     }
+   });
+ }
+ try{Android.syncDueNotifications(JSON.stringify(notifications))}catch(e){}
+}
+function syncSettings(){
+ document.getElementById('income').value=data.income||'';
+ applyPrivacy();applyNotificationSetting();
+}
 
 function dueDateForInstallment(item,index){
  const first=new Date((item.firstDueDate||todayISO())+'T00:00:00');
@@ -381,16 +449,33 @@ function renderDebts(){
 }
 function renderDebtItem(x){
  const paid=Number(x.paidMonths)||0,tenor=Number(x.tenor)||1,pct=Math.min(100,paid/tenor*100),n=nextDue(x),cls=n.diff<=0?'red':n.diff<=3?'warn':'green';
+ const pokok=Number(x.price)||0,total=calcTotal(x),admin=Number(x.admin)||0,bunga=Math.max(0,total-pokok-admin);
+ const hist=Array.isArray(x.paymentHistory)?x.paymentHistory:[];
+ const histHtml=hist.length?hist.slice().reverse().map(p=>`<div class="payment-row"><span>${new Date((p.date||todayISO())+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})} • pembayaran ${p.installment||'—'}</span><strong class="money">${rp(p.amount)}</strong></div>`).join(''):
+   `<div class="muted" style="margin-top:9px">${paid>0?`${paid} pembayaran lama sudah tercatat di progress, tetapi belum memiliki tanggal riwayat karena dibuat sebelum fitur riwayat aktif.`:'Belum ada pembayaran tercatat.'}</div>`;
  return `<div class="item"><div class="item-top"><div><div class="item-name">${esc(x.name)}</div><div class="item-meta">${esc(x.platform)} • ${paid}/${tenor} dibayar • berikutnya ${n.date.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div></div>
  <div class="item-amount money">${rp(remaining(x))}<div><span class="badge ${cls}">${n.diff<0?'Terlambat':n.diff===0?'Hari ini':'H-'+n.diff}</span></div></div></div>
  <div class="item-progress"><div class="track"><div class="fill" style="width:${pct}%"></div></div></div>
- <div class="actions"><button class="secondary" onclick="payOne(${x.id})">+ Bayar 1x</button><button class="ghost" onclick="editItem(${x.id})">Edit</button><button class="dangerbtn" onclick="markPaid(${x.id})">Tandai Lunas</button></div></div>`;
+ <div class="actions"><button class="secondary" onclick="payOne(${x.id})">+ Bayar 1x</button><button class="ghost" onclick="editItem(${x.id})">Edit</button><button class="dangerbtn" onclick="markPaid(${x.id})">Tandai Lunas</button></div>
+ <details class="cost-details"><summary>Rincian biaya & riwayat pembayaran</summary><div class="cost-body">
+   <div class="cost-grid">
+    <div class="cost-box"><span>Pokok</span><strong class="money">${rp(pokok)}</strong></div>
+    <div class="cost-box"><span>Total Bunga</span><strong class="money">${rp(bunga)}</strong></div>
+    <div class="cost-box"><span>Admin</span><strong class="money">${rp(admin)}</strong></div>
+    <div class="cost-box"><span>Total Bayar</span><strong class="money">${rp(total)}</strong></div>
+    <div class="cost-box"><span>Cicilan / Bulan</span><strong class="money">${rp(monthly(x))}</strong></div>
+    <div class="cost-box"><span>Biaya Tambahan</span><strong class="money">${rp(bunga+admin)}</strong></div>
+   </div>
+   <div class="payment-list">${histHtml}</div>
+ </div></details></div>`;
 }
 function renderHistory(){
  const box=document.getElementById('completedList');document.getElementById('historyCount').textContent=data.completed.length+' lunas';
  box.innerHTML=data.completed.length?data.completed.map(x=>`<div class="history-item"><div class="item-top"><div><div class="item-name">✓ ${esc(x.name)}</div>
  <div class="item-meta">${esc(x.platform)} • ${x.completedAt?new Date(x.completedAt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'Tanggal tidak tersedia'}</div></div>
- <div class="item-amount money">${rp(calcTotal(x))}</div></div><div class="actions"><button class="ghost" onclick="restoreItem(${x.id})">Kembalikan</button></div></div>`).join(''):'<div class="empty">Belum ada cicilan yang lunas.</div>';
+ <div class="item-amount money">${rp(calcTotal(x))}</div></div>
+ <div class="muted" style="margin-top:8px">${(x.paymentHistory||[]).length} pembayaran memiliki riwayat tanggal • biaya tambahan ${rp(Math.max(0,calcTotal(x)-(Number(x.price)||0)-(Number(x.admin)||0))+(Number(x.admin)||0))}</div>
+ <div class="actions"><button class="ghost" onclick="restoreItem(${x.id})">Kembalikan</button></div></div>`).join(''):'<div class="empty">Belum ada cicilan yang lunas.</div>';
  applyPrivacy();
 }
 function toggleCustomPlatform(){document.getElementById('customPlatformWrap').classList.toggle('hidden',document.getElementById('platform').value!=='Lainnya')}
@@ -422,8 +507,12 @@ function editItem(id){
 }
 function payOne(id){
  const x=data.items.find(x=>x.id===id);if(!x)return;if(x.paidMonths>=x.tenor)return;
- x.paidMonths++; if(x.paidMonths>=x.tenor){completeItem(x.id);toast('Cicilan lunas 🎉');return}
- save();renderAll();renderDebts();toast(`Pembayaran ${x.paidMonths}/${x.tenor} dicatat.`);
+ const installment=(Number(x.paidMonths)||0)+1;
+ x.paymentHistory=Array.isArray(x.paymentHistory)?x.paymentHistory:[];
+ x.paymentHistory.push({id:uid(),date:todayISO(),amount:monthly(x),installment});
+ x.paidMonths=installment;
+ if(x.paidMonths>=x.tenor){completeItem(x.id);toast('Pembayaran dicatat. Cicilan lunas 🎉');return}
+ save();renderAll();renderDebts();toast(`Pembayaran ${x.paidMonths}/${x.tenor} dicatat hari ini.`);
 }
 function completeItem(id){
  const i=data.items.findIndex(x=>x.id===id);if(i<0)return;const x=data.items[i];data.items.splice(i,1);data.completed.unshift({...x,paidMonths:x.tenor,completedAt:new Date().toISOString()});save();renderAll();renderDebts();renderHistory();
@@ -432,7 +521,7 @@ function markPaid(id){const x=data.items.find(x=>x.id===id);if(x&&confirm(`Tanda
 function restoreItem(id){const i=data.completed.findIndex(x=>x.id===id);if(i<0)return;const x=data.completed[i];data.completed.splice(i,1);delete x.completedAt;x.paidMonths=Math.max(0,(Number(x.tenor)||1)-1);data.items.push(x);save();renderAll();renderHistory();toast('Cicilan dikembalikan ke daftar aktif.')}
 
 function exportBackup(){
- const backup={app:'BLLS',version:4,exportedAt:new Date().toISOString(),...data};
+ const backup={app:'BLLS',version:4.2,exportedAt:new Date().toISOString(),...data};
  const text=JSON.stringify(backup,null,2);
  const filename=`BLLS-backup-${todayISO()}.json`;
 
@@ -507,7 +596,7 @@ function resetAll(){
  if(!confirm('Hapus SEMUA data BLLS di perangkat ini?'))return;
  data={...blank};save();syncSettings();renderAll();toast('Semua data BLLS dihapus.');
 }
-function renderAll(){renderHome();renderDebts();renderHistory();document.getElementById('income').value=data.income||'';applyPrivacy();updateDemoStatus()}
+function renderAll(){renderHome();renderDebts();renderHistory();document.getElementById('income').value=data.income||'';applyPrivacy();applyNotificationSetting();updateDemoStatus();syncNativeNotifications()}
 resetForm();syncSettings();renderAll();
 </script>
 </body>
